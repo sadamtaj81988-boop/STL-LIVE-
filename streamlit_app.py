@@ -322,3 +322,40 @@ elif page == "Control Layer":
     st.write(f"Auto Refresh: {auto_refresh}")
     st.write(f"Refresh Rate: {refresh_rate} sec")
     st.write("This layer controls navigation, input selection, and system refresh behavior.")
+
+# =========================
+# HYDRO SCORE (INTELLIGENCE)
+# =========================
+
+st.subheader("💧 STL Hydro Score")
+
+def hydro_score(df):
+    # Conversion rates
+    df["conversion"] = df["purchases"] / df["visitors"]
+
+    # Revenue efficiency
+    df["efficiency"] = df["revenue"] / df["purchases"]
+
+    # Normalize scores
+    conv_score = df["conversion"].mean()
+    eff_score = df["efficiency"].mean()
+
+    score = (conv_score * 0.6) + (eff_score * 0.4)
+
+    return round(score, 2)
+
+score = hydro_score(df)
+
+st.metric("Hydro Score", score)
+
+# Alerts
+st.subheader("🚨 STL Alerts")
+
+for i, row in df.iterrows():
+    if row["purchases"] / row["visitors"] < 0.1:
+        st.warning(f"Low conversion detected in {row['channel']}")
+
+    if row["revenue"] / row["purchases"] < 20:
+        st.warning(f"Low revenue efficiency in {row['channel']}")
+
+st.success("STL Intelligence Engine Active")
