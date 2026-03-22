@@ -359,3 +359,86 @@ for i, row in df.iterrows():
         st.warning(f"Low revenue efficiency in {row['channel']}")
 
 st.success("STL Intelligence Engine Active")
+
+# =========================
+# UPGRADE: CHANNEL RANKING
+# =========================
+
+st.subheader("🏆 Channel Ranking")
+
+df["conversion"] = df["purchases"] / df["visitors"]
+df["revenue_per_purchase"] = df["revenue"] / df["purchases"].replace(0, 1)
+df["channel_score"] = (df["conversion"] * 0.7) + (df["revenue_per_purchase"] * 0.3 / 100)
+
+ranked_df = df.sort_values("channel_score", ascending=False).reset_index(drop=True)
+ranked_df["rank"] = ranked_df.index + 1
+
+st.dataframe(
+    ranked_df[["rank", "channel", "visitors", "purchases", "revenue", "conversion", "revenue_per_purchase", "channel_score"]],
+    use_container_width=True
+)
+
+# =========================
+# UPGRADE: SEVERITY ENGINE
+# =========================
+
+st.subheader("⚠️ Severity Assessment")
+
+def severity_label(conv):
+    if conv < 0.03:
+        return "HIGH RISK"
+    elif conv < 0.08:
+        return "MEDIUM RISK"
+    else:
+        return "STABLE"
+
+df["severity"] = df["conversion"].apply(severity_label)
+
+for _, row in df.iterrows():
+    if row["severity"] == "HIGH RISK":
+        st.error(f"{row['channel']}: HIGH RISK — conversion is critically low.")
+    elif row["severity"] == "MEDIUM RISK":
+        st.warning(f"{row['channel']}: MEDIUM RISK — conversion needs improvement.")
+    else:
+        st.success(f"{row['channel']}: STABLE — conversion is healthy.")
+
+# =========================
+# UPGRADE: RECOMMENDATION ENGINE
+# =========================
+
+st.subheader("🧠 STL Recommendations")
+
+for _, row in df.iterrows():
+    conv = row["conversion"]
+    rpp = row["revenue_per_purchase"]
+
+    if conv < 0.03:
+        st.write(f"**{row['channel']}** → Fix conversion pipeline immediately. Traffic exists, but users are not completing purchases.")
+    elif conv < 0.08:
+        st.write(f"**{row['channel']}** → Optimize checkout flow, offer quality, or targeting to raise conversion.")
+    else:
+        st.write(f"**{row['channel']}** → Maintain current process. This channel is performing well.")
+
+    if rpp < 25:
+        st.write(f"- {row['channel']} has low revenue efficiency. Increase order value or improve pricing strategy.")
+
+# =========================
+# UPGRADE: EXECUTIVE SUMMARY
+# =========================
+
+st.subheader("📌 Executive Summary")
+
+weakest = df.loc[df["conversion"].idxmin(), "channel"]
+strongest = df.loc[df["conversion"].idxmax(), "channel"]
+avg_conversion = round(df["conversion"].mean() * 100, 2)
+
+st.info(
+    f"""
+    STL Executive Summary:
+    - Strongest channel: {strongest}
+    - Weakest channel: {weakest}
+    - Average conversion: {avg_conversion}%
+    - Main issue: Pipeline inefficiency in low-converting channels
+    - Primary action: Improve conversion process before increasing traffic
+    """
+)
